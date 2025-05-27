@@ -9,15 +9,12 @@
 - [ ] Projects expire at the end of the creator's batch (or just 6 weeks?)
 - [ ] It's hosted somewhere accessible to RCers
 
-
 ## Rough Schema
 Everything has an id and timestamps.
 
 ### User
 - name
 - email
-- zuliplink
-
 
 ### Project
 - name
