@@ -1,38 +1,40 @@
-# sv
+# Tinder for RC Pairing
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+- [x] Frontend scaffolded
+- [ ] Backend scaffolded
+- [ ] Users can add project
+- [ ] Users can sort a list of projects into "want to pair" or "not interested"
+- [ ] Users can easily get in touch with owners of matched projects (Zulip integration?)
+- [ ] Users can be created and authenticated with RC Auth
+- [ ] Projects expire at the end of the creator's batch (or just 6 weeks?)
+- [ ] It's hosted somewhere accessible to RCers
 
-## Creating a project
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Rough Schema
+Everything has an id and timestamps.
 
-```bash
-# create a new project in the current directory
-npx sv create
+### User
+- name
+- email
+- zuliplink
 
-# create a new project in my-app
-npx sv create my-app
-```
 
-## Developing
+### Project
+- name
+- description
+- expires_on datetime
+- archived bool
+- FK tags
+- FK owner {user}
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Tags
+- string (id)
 
-```bash
-npm run dev
+### Match_Preference
+- FK user
+- FK project
+- matched bool
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### project_tags
+- FK project
+- FK tag
