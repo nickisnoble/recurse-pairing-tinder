@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import datetime, timedelta
 from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, Relationship, create_engine, select
+from sqlmodel import Field, Session, SQLModel, Relationship, create_engine, select, UniqueConstraint
 import uuid
 import requests
 
@@ -9,35 +9,38 @@ import requests
 
 
 class MatchPreference(SQLModel, table=True):
-    id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
-    created_at: datetime = Field(default=datetime.utcnow(), nullable=False)
-    user_id: uuid.UUID = Field(foreign_key="user.id")
-    project_id: uuid.UUID = Field(foreign_key="project.id")
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_id", name="project_user_unique"),
+    )
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: str = Field(default=datetime.utcnow(), nullable=False)
+    user_id: int = Field(foreign_key="user.id")
+    project_id: int = Field(foreign_key="project.id")
     matched: int = Field(default=0)
 
 class User(SQLModel, table=True):
-    id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=False)
     email: str = Field(index=True, unique=True)
-    # projects: list["Project"] = Relationship(back_populates="project")
-    # matches: list["Project"] = Relationship(back_populates="project", link_model=MatchPreference)
+    projects: list["Project"] = Relationship(back_populates="owner")
+    matches: list["Project"] = Relationship(back_populates="matches", link_model=MatchPreference)
 
 class ProjectTag(SQLModel, table=True):
-    id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
-    project_id: uuid.UUID = Field(foreign_key="project.id")
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id")
     # project: Project | None = Relationship(back_populates="projects")
     tag: str = Field(foreign_key="tag.label")
 
 class Project(SQLModel, table=True):
-    id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
     description: str = Field()
-    owner_id: uuid.UUID = Field(foreign_key="user.id")
-    # owner: User | None = Relationship(back_populates="user")
-    # matches: list[User] = Relationship(back_populates="user", link_model=MatchPreference)
+    owner_id: int = Field(foreign_key="user.id")
+    owner: User | None = Relationship(back_populates="projects")
+    matches: list[User] = Relationship(back_populates="matches", link_model=MatchPreference)
 
-    expires_on: datetime = Field(default=datetime.utcnow() + timedelta(days=14) , nullable=False)
-    created_at: datetime = Field(default=datetime.utcnow(), nullable=False)
+    expires_on: str = Field(default=datetime.utcnow() + timedelta(days=14) , nullable=False)
+    created_at: str = Field(default=datetime.utcnow(), nullable=False)
     # tags: list["Tag"] = Relationship(back_populates="tag", link_model=ProjectTag)
 
 class Tag(SQLModel, table=True):
@@ -51,6 +54,9 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
 
+def drop_db_and_tables():
+    SQLModel.metadata.drop_all(engine)
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
@@ -61,6 +67,8 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI()
+# drop_db_and_tables()
+
 
 @app.on_event("startup")
 def on_startup():
@@ -84,8 +92,7 @@ def read_user(user: User, session: SessionDep) -> User:
         id: user.id,
         name: user.name,
         email: user.email,
-        projects: projects
-      }
+        projects: projects      }
     }
 
 # https://fastapi.tiangolo.com/features/?h=auth#security-and-authentication
@@ -138,7 +145,7 @@ def read_projects(
 
 
 @app.get("/projects/{project_id}")
-def read_project(project_id: uuid.UUID, session: SessionDep) -> Project:
+def read_project(project_id: int, session: SessionDep) -> Project:
     project = session.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -146,7 +153,7 @@ def read_project(project_id: uuid.UUID, session: SessionDep) -> Project:
 
 
 @app.delete("/projects/{project_id}")
-def delete_project(project_id: uuid.UUID, session: SessionDep):
+def delete_project(project_id: int, session: SessionDep):
     project = session.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -154,10 +161,9 @@ def delete_project(project_id: uuid.UUID, session: SessionDep):
     session.commit()
     return {"ok": True}
 
-
-@app.post("/match/{user_id}/{project_id}/{match_value}")
-def match(user_id: uuid.UUID, project_id: uuid.UUID, match_value: int, session: SessionDep):
-    match = MatchPreference(user_id=user_id, project_id=project_id, match_value=match_value)
+@app.post("/match/")
+def match(match: MatchPreference, session: SessionDep) -> MatchPreference:
     session.add(match)
     session.commit()
-    return {"ok": ConnectionRefusedError}
+    session.refresh(match)
+    return match
