@@ -19,8 +19,8 @@ class User(SQLModel, table=True):
     id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(index=False)
     email: str = Field(index=True, unique=True)
-    projects: list["Project"] = Relationship(back_populates="project")
-    matches: list["Project"] = Relationship(back_populates="project", link_model=MatchPreference)
+    # projects: list["Project"] = Relationship(back_populates="project")
+    # matches: list["Project"] = Relationship(back_populates="project", link_model=MatchPreference)
 
 class ProjectTag(SQLModel, table=True):
     id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -33,16 +33,16 @@ class Project(SQLModel, table=True):
     name: str = Field(index=True, unique=True)
     description: str = Field()
     owner_id: uuid.UUID = Field(foreign_key="user.id")
-    owner: User | None = Relationship(back_populates="user")
-    matches: list["User"] = Relationship(back_populates="user", link_model=MatchPreference)
+    # owner: User | None = Relationship(back_populates="user")
+    # matches: list[User] = Relationship(back_populates="user", link_model=MatchPreference)
 
     expires_on: datetime = Field(default=datetime.utcnow() + timedelta(days=14) , nullable=False)
     created_at: datetime = Field(default=datetime.utcnow(), nullable=False)
-    tags: list["Tag"] = Relationship(back_populates="tag", link_model=ProjectTag)
+    # tags: list["Tag"] = Relationship(back_populates="tag", link_model=ProjectTag)
 
 class Tag(SQLModel, table=True):
     label: str = Field(index=True, primary_key=True)
-    projects: list["Project"] = Relationship(back_populates="project", link_model=ProjectTag)
+    # projects: list[Project] = Relationship(back_populates="project", link_model=ProjectTag)
 
 
 sqlite_file_name = "database.db"
@@ -101,7 +101,7 @@ def create_user(user: User, session: SessionDep) -> User:
 #   headers = {'Authorization:': 'Bearer ' + token}
 #   rcjson = requests.get('https://www.recurse.com/api/v1/people/me', headers)
 #           user = User(
-#           rc_id=
+#           rc_id=rcjson.
 #           name=rcjson.first_name,
 #           email=rcjson.email,
 #           github=rcjson.github,
