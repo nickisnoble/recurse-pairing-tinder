@@ -5,7 +5,7 @@
 	const { children }: Props = $props();
 </script>
 
-<header class="bg-gray-200 h-24 flex p-4 md:justify-between">
+<header class="bg-gray-200 h-24 flex p-4 justify-center fixed bottom-0 left-0 right-0 md:justify-between md:static">
 	<div class="hidden md:block">
         <Logo />
     </div>
