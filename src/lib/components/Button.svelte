@@ -14,6 +14,6 @@
 </script>
 
 <button {onclick}
-    class={["rounded-full bg-gray-400 p-0.5 size-10", large ? "scale-150" : ""]}>
+    class={["rounded-full bg-gray-50 p-0.5 size-10", large ? "scale-150" : ""]}>
     <FontAwesomeIcon {icon}/>
 </button>
